@@ -26,15 +26,33 @@ import { FaClipboardList } from "react-icons/fa6";
 
 import { UseSiteContext } from "@/SiteContext/SiteContext";
 
-type Titem = {
-  key: string; // env suffix (without NEXT_PUBLIC_)
+
+
+type SidebarFlagKey =
+  | "SHOW_HOME"
+  | "SHOW_ORDERS"
+  | "SHOW_ORDERS_REALTIME"
+  | "SHOW_SALE"
+  | "SHOW_RESERVATIONS"
+  | "SHOW_CATEGORIES"
+  | "SHOW_PICKUP_DISCOUNT"
+  | "SHOW_PRODUCTS"
+  | "SHOW_VARIANTS"
+  | "SHOW_COUPON"
+  | "SHOW_DELIVERY"
+  | "SHOW_USERS"
+  | "SHOW_SETTING"
+  | "SHOW_DATA_BACKUP";
+
+  type Titem = {
+  key: SidebarFlagKey;  // ✅ exact string union
   name: string;
   link: string;
   icon: JSX.Element;
 };
 
 
-export const sidebarFlags = {
+export const sidebarFlags: Record<SidebarFlagKey, boolean> = {
   SHOW_HOME: process.env.NEXT_PUBLIC_SHOW_HOME === "1",
   SHOW_ORDERS: process.env.NEXT_PUBLIC_SHOW_ORDERS === "1",
   SHOW_ORDERS_REALTIME: process.env.NEXT_PUBLIC_SHOW_ORDERS_REALTIME === "1",
@@ -117,9 +135,8 @@ const Sidebar = () => {
   // - If NEXT_PUBLIC_<KEY> === "0" -> hide
   // - Otherwise (undefined or "1" or any other) -> show (default visible)
 
-const filteredMenu = menuList.filter((item) => {
-  return sidebarFlags[item.key];
-});
+
+const filteredMenu = menuList.filter((item) => sidebarFlags[item.key]);
 
   // debug (optional) — remove in production
   useEffect(() => {
