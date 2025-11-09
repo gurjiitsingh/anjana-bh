@@ -41,13 +41,13 @@ const SignIn = () => {
               id="email"
               required
               defaultValue="g@mail.com"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-zinc-800 dark:border-zinc-700 dark:text-white focus:border-emerald-600 focus:ring-emerald-500 sm:text-sm"
+              className="mt-1 block w-full py-2 px-2 rounded-md border-gray-300 shadow-sm dark:bg-zinc-800 dark:border-zinc-700 dark:text-white focus:border-emerald-600 focus:ring-emerald-500 sm:text-sm"
             />
           </div>
 
           <div>
             <div className="flex justify-between items-center">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-zinc-300">
+              <label htmlFor="password" className="block  text-sm font-medium text-gray-700 dark:text-zinc-300">
                 Password
               </label>
               <Link
@@ -63,13 +63,20 @@ const SignIn = () => {
               id="password"
               required
               defaultValue="123456"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-zinc-800 dark:border-zinc-700 dark:text-white focus:border-emerald-600 focus:ring-emerald-500 sm:text-sm"
+              className="mt-1 block w-full py-2 px-2 rounded-md border-gray-300 shadow-sm dark:bg-zinc-800 dark:border-zinc-700 dark:text-white focus:border-emerald-600 focus:ring-emerald-500 sm:text-sm"
             />
           </div>
 
-          <Button type="submit" className="w-full">
-            Sign In
-          </Button>
+          
+
+          <Button
+  type="submit"
+  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white 
+             dark:bg-red-600 dark:hover:bg-red-700"
+>
+  Sign In
+</Button>
+
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-600 dark:text-zinc-400">
