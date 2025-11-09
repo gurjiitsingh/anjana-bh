@@ -13,8 +13,8 @@
 
 export function formatCurrencyNumber(
   amount: number,
-  currency: string = "GBP",
-  locale: string = "en-GB"
+  currency: string,
+  locale: string
 ): string {
   return new Intl.NumberFormat(locale, {
     style: "currency",

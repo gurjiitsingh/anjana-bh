@@ -15,7 +15,7 @@ const lato = Lato({
   weight: ["400", "700"],
 });
 
-export default function HeroSectionCustom() {
+export default function HeroSectionCustomMenu() {
   return (
     <section className="relative w-full overflow-hidden">
       {/* Background Image (Top Section) */}
@@ -65,50 +65,10 @@ export default function HeroSectionCustom() {
             </h2>
 
             {/* Features */}
-            <ul className="space-y-2 text-base text-[12px] text-center md:text-left">
-              <li className="flex items-center justify-center md:justify-start gap-2 text-[#c36b1e]  ">
-                <FaThumbsUp className="text-[#c36b1e]  md:text-white   " />
-              100% Freshly Made Every Day
-              </li>
-              <li className="flex items-center justify-center md:justify-start gap-2 text-center md:text-left text-[#c36b1e]  ">
-                <FaShieldAlt className="text-[#c36b1e]  md:text-white  " />
-                Pure Ingredients · 
-                {/* No Preservatives */}
-              </li>
-              <li className="flex items-center justify-center md:justify-start gap-2 text-center md:text-left text-[#c36b1e]  ">
-                <FaSmile className="text-[#c36b1e]  md:text-white  " />
-               Loved by{" "}  
-                <a
-                  href="#"
-                  className="underline text-[#c36b1e]   hover:text-green-400 "
-                >
-                   1000+ Happy Customers
-                </a>
-              </li>
-            </ul>
+   
 
             {/* Buttons */}
-            <div className="flex flex-col md:flex-row justify-start gap-4 pt-4">
-              <Link
-                href="/menu"
-                rel="noopener noreferrer"
-                data-aos="fade-left"
-                className={`${lato.className}  bg-[#ff7519] hover:bg-[#611616] text-2xl text-white font-semibold px-6 py-1 rounded-xl transition text-center tracking-wide`}
-               
-            
-              >
-                  ORDER SWEETS
-              </Link>
-
-              <Link
-                href="/#bf"
-                rel="noopener noreferrer"
-                className={`${lato.className}  bg-white text-[#ff7519] text-2xl font-bold px-6 py-1 rounded-xl border-1 border-[#ff7519] hover:bg-[#7a1f1f] hover:text-white transition text-center`}
-               
-              >
-                CONTACT US
-              </Link>
-            </div>
+           
           </div>
         </div>
       </div>

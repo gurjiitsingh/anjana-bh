@@ -53,10 +53,10 @@ export default function ProductCardForSlider({
 
   const priceRegular = formatCurrencyNumber(
   product.price ?? 0,       // numeric value
-  "GBP",                    // UK currency
-  "en-GB"                   // English (United Kingdom) locale
+  (settings.currency ) as string,
+      (settings.locale ) as string
 );
-console.log("settings.currency---------------",settings.currency)
+
   let priceDiscounted;
   let priceTarget = product.price ?? 0;
   if (product.discountPrice && product.discountPrice > 0) {
@@ -64,8 +64,8 @@ console.log("settings.currency---------------",settings.currency)
     // priceDiscounted = product.discountPrice.toString().replace (/\./g, ",");
     priceDiscounted = formatCurrencyNumber(
       product.discountPrice,
-      (settings.currency || "GBP") as string,
-      (settings.locale || "en-GB") as string
+      (settings.currency ) as string,
+      (settings.locale ) as string
     );
   }
 

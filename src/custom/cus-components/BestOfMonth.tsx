@@ -69,10 +69,10 @@ export default function BestOfMonth() {
             <FaStar /> Best of the Month
           </div>
           <p className="text-[#d24a0f] text-xs sm:text-sm mt-2">
-            Die meistbestellten Gerichte der letzten 30 Tage
+          The most ordered sweets of the last 30 days.
           </p>
           <p className="text-gray-600 text-xs sm:text-sm mt-1">
-            Fast alle Gerichte mit: <span className="font-semibold">Reis</span>
+            Best Sweets: <span className="font-semibold"></span>
           </p>
         </div>
 

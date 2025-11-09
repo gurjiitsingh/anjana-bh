@@ -161,7 +161,7 @@ export default function Products() {
   }
 
   return (
-    <div className="container mx-auto w-full ">
+    <div className="max-w-6xl mx-auto">
       <div className={containerClass}>
         {products.map((product, i) => (
           <Card

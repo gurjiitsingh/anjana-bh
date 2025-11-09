@@ -4,7 +4,7 @@ import { categorySchema, editCategorySchema } from "@/lib/types/categoryType";
 import { deleteImage, upload } from "@/lib/cloudinary";
 import { categoryType } from "@/lib/types/categoryType";
 import { adminDb } from "@/lib/firebaseAdmin";
-import z from "zod";
+
 
 // ✅ Removed all incorrect Firestore imports from firebase-admin
 // You already use the correct admin SDK syntax
