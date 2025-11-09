@@ -5,7 +5,7 @@ import Link from 'next/link';
 export default function PrivacyPolicy() {
   return ( <div className="relative container mx-auto py-5 p-1">
     <div className="max-w-3xl mx-auto px-4 py-10 text-gray-800">
-
+{/* 
   <div className="my-8 text-sm">
         🔄{' '}
         <Link href="/privacy/en" className="text-blue-600 underline">
@@ -60,7 +60,7 @@ export default function PrivacyPolicy() {
       <p className="mb-4">
         Ihre persönlichen Daten werden durch moderne Sicherheitsmechanismen geschützt und nur intern verarbeitet.
       </p> */}
-
+{/*
       <h2 className="text-xl font-semibold mt-6 mb-2">5. Ihre Rechte</h2>
       <p className="mb-4">
         Sie haben jederzeit das Recht auf Auskunft, Berichtigung oder Löschung Ihrer Daten.
@@ -85,7 +85,7 @@ export default function PrivacyPolicy() {
 
       <p className="text-sm text-gray-500 mt-10">Zuletzt aktualisiert: {new Date().toLocaleDateString('de-DE')}</p>
 
-    
+     */}
     </div>
     </div>
   );

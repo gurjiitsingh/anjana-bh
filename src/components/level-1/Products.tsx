@@ -55,6 +55,7 @@ export default function Products() {
   // Set initial category
   useEffect(() => {
     const fallbackCategory = settings.display_category as string;
+    console.log("fallbackCategory--------------------",fallbackCategory)
     setCategoryId(productCategoryIdG || fallbackCategory || "");
   }, [settings, productCategoryIdG]);
 

@@ -31,7 +31,7 @@ const poppins = Poppins({
 
 export default function CategorySliderLight() {
   const [categoryData, setCategoryData] = useState<CategoryType[]>([]);
-  const [displayCategory, setDisplayCategory] = useState<string>("");
+  const [displayCategory, setDisplayCategory] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -42,13 +42,15 @@ export default function CategorySliderLight() {
   } = UseSiteContext();
 
   // ✅ Handle displayCategory selection
-  useEffect(() => {
-    if (!productCategoryIdG) {
-      setDisplayCategory(settings.display_category);
-    } else {
-      setDisplayCategory(productCategoryIdG);
-    }
-  }, [settings, productCategoryIdG]);
+
+
+useEffect(() => {
+  if (!productCategoryIdG) {
+   setDisplayCategory(settings.display_category?.toString() ?? null);
+  } else {
+    setDisplayCategory(productCategoryIdG);
+  }
+}, [settings, productCategoryIdG]);
 
   // ✅ Fetch categories
   useEffect(() => {
