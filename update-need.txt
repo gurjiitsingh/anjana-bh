@@ -1,0 +1,7 @@
+✅ If you want, I can also generate:
+
+✅ Debounced search (no instant spam)
+✅ Pagination in URL (?page=2)
+✅ Add sort (?sort=name)
+✅ Add "reset filters" button
+✅ Convert to Tanstack Query for cache & refetch

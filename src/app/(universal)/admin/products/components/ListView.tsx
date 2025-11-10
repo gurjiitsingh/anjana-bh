@@ -10,134 +10,122 @@ import {
 } from "@/components/ui/table";
 
 import TableRows from "./TableRows";
+import { useSearchParams, useRouter } from "next/navigation";
 
-import { fetchCategories } from "@/app/(universal)/action/category/dbOperations";
-import { ProductType } from "@/lib/types/productType";
-import { categoryType } from "@/lib/types/categoryType";
-import { useSearchParams } from "next/navigation";
-import {
-  fetchProductByCategoryId,
-  fetchProducts,
-} from "@/app/(universal)/action/products/dbOperation";
-
-const ListView = ({ title }: { title?: string }) => {
+export default function ListView() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const productIdFromQuery = searchParams.get("productId");
 
-  const [productData, setProductData] = useState<ProductType[]>([]);
-  const [allProducts, setAllProducts] = useState<ProductType[]>([]);
-  const [categoryData, setCategoryData] = useState<categoryType[]>([]);
-  const [cateId, setCateId] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  // ✅ URL state
+  const urlCategory = searchParams.get("category") || "";
+  const urlSearch = searchParams.get("search") || "";
 
+  // ✅ Component state
+  const [categories, setCategories] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [filtered, setFiltered] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // ✅ Fetch initial data only once
   useEffect(() => {
-    async function fetchInitialData() {
-      try {
-        const categories = await fetchCategories();
-        categories.sort((a, b) => a.sortOrder! - b.sortOrder!);
-        setCategoryData(categories);
+    async function loadData() {
+      const res = await fetch("/api/initialData");
+      const json = await res.json();
 
-        const allProds = await fetchProducts();
-        allProds.sort((a, b) => a.sortOrder - b.sortOrder);
-        setAllProducts(allProds);
-
-        if (productIdFromQuery) {
-          const matched = allProds.find((p) => p.id === productIdFromQuery);
-          setProductData(matched ? [matched] : []);
-        } else {
-          setProductData(allProds);
-        }
-      } catch (error) {
-        console.log(error);
+      if (!json.error) {
+        setCategories(json.categories);
+        setProducts(json.products);
       }
+      setLoading(false);
+    }
+    loadData();
+  }, []);
+
+  // ✅ Apply filters when URL changes
+  useEffect(() => {
+    let list = [...products];
+
+    if (urlCategory) {
+      list = list.filter((p) => p.categoryId === urlCategory);
     }
 
-    fetchInitialData();
-  }, [productIdFromQuery]);
-
-  useEffect(() => {
-    async function fetchProductsByCategory() {
-      try {
-        if (cateId === "") {
-          setProductData(allProducts);
-        } else {
-          const filteredProds = await fetchProductByCategoryId(cateId);
-          filteredProds.sort((a, b) => a.sortOrder - b.sortOrder);
-          setProductData(filteredProds);
-        }
-      } catch (error) {
-        console.log(error);
-      }
+    if (urlSearch) {
+      list = list.filter((p) =>
+        p.name.toLowerCase().includes(urlSearch.toLowerCase())
+      );
     }
 
-    fetchProductsByCategory();
-  }, [cateId, allProducts]);
+    setFiltered(list);
+  }, [urlCategory, urlSearch, products]);
 
-  const filteredProducts = productData.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // ✅ Update URL (client side, no refresh)
+  function updateURL(key: string, value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (value) params.set(key, value);
+    else params.delete(key);
+
+    router.push("?" + params.toString());
+  }
+
+  if (loading) return <p>Loading...</p>;
 
   return (
     <div className="mt-2">
-      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-4 mb-4">
+
+        {/* ✅ Category Filter */}
         <div className="w-full md:w-1/2">
-          <label className="block text-sm font-medium mb-1">
-            Select Category
-          </label>
+          <label className="block text-sm font-medium mb-1">Category</label>
           <select
-            value={cateId}
-            onChange={(e) => {
-              setCateId(e.target.value);
-              setSearchTerm("");
-            }}
+            value={urlCategory}
+            onChange={(e) => updateURL("category", e.target.value)}
             className="w-full border border-gray-300 rounded px-3 py-2"
           >
             <option value="">All</option>
-            {categoryData.map((cate) => (
-              <option key={cate.id} value={cate.id}>
-                {cate.name}
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
               </option>
             ))}
           </select>
         </div>
 
+        {/* ✅ Search Filter */}
         <div className="w-full md:w-1/2">
           <label className="block text-sm font-medium mb-1">Search</label>
           <input
             type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by name"
+            value={urlSearch}
+            onChange={(e) => updateURL("search", e.target.value)}
+            placeholder="Search by name..."
             className="w-full p-2 border border-gray-300 rounded"
           />
         </div>
       </div>
 
-      <h3 className="text-2xl mb-4 font-semibold">{title || "Products"}</h3>
+      <h3 className="text-2xl mb-4 font-semibold">Products</h3>
+
       <div className="bg-slate-50 rounded-lg p-1 overflow-x-auto">
         <Table>
           <TableHeader className="bg-gray-100 dark:bg-zinc-800">
             <TableRow>
-              <TableHead className="hidden md:table-cell">Image</TableHead>
-              <TableHead className="hidden md:table-cell">Name</TableHead>
-              <TableHead className="hidden md:table-cell">Category</TableHead>
-              <TableHead className="hidden md:table-cell">Price</TableHead>
-              <TableHead className="hidden md:table-cell">
-                Discount Price
-              </TableHead>
-              <TableHead className="hidden md:table-cell">Quantity</TableHead>
-
-              {/* ✅ New GST Column */}
-              <TableHead className="hidden md:table-cell">GST %</TableHead>
-
+              <TableHead>Image</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>Discount</TableHead>
+              <TableHead>Qty</TableHead>
+              <TableHead>GST</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Desc</TableHead>
-              <TableHead className="hidden md:table-cell">Action</TableHead>
+              <TableHead>Action</TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
-            {filteredProducts.map((product) => (
+            {filtered.map((product) => (
               <TableRows key={product.id} product={product} />
             ))}
           </TableBody>
@@ -145,6 +133,4 @@ const ListView = ({ title }: { title?: string }) => {
       </div>
     </div>
   );
-};
-
-export default ListView;
+}

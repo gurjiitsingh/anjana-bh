@@ -1,7 +1,7 @@
 "use server";
 
 
-import { formatPriceStringToNumber } from "@/utils/formatters";
+
 
 import { adminDb } from "@/lib/firebaseAdmin";
 import {  ProductType } from "@/lib/types/productType";
@@ -136,9 +136,117 @@ export async function uploadImage(formData: FormData) {
   };
 }
 
+import { revalidatePath } from "next/cache";
 
 
 export async function addNewProduct(formData: FormData) {
+  try {
+    const featured_img = formData.get("isFeatured") === "true";
+    const name = formData.get("name") as string;
+    const price = formData.get("price") as string;
+    const discountPrice = formData.get("discountPrice") as string;
+    const sortOrder = formData.get("sortOrder") as string;
+    const categoryId = formData.get("categoryId") as string;
+    const productDesc = formData.get("productDesc") as string;
+    const image = formData.get("image");
+    const status = formData.get("status") as "published" | "draft" | "out_of_stock";
+    const stockQtyRaw = formData.get("stockQty") as string | null;
+
+    // ✅ New tax fields
+    const taxRateRaw = formData.get("taxRate") as string | null;
+    const taxType = (formData.get("taxType") as string | null) || "GST";
+
+    const stockQty = stockQtyRaw ? parseInt(stockQtyRaw, 10) : null;
+    const priceF = parseFloat(price.replace(/,/g, ".")) || 0;
+    const discountPriceF = parseFloat(discountPrice.replace(/,/g, ".")) || 0;
+    const sortOrderN = parseInt(sortOrder || "0", 10);
+    const taxRate = taxRateRaw ? parseFloat(taxRateRaw) : null;
+
+    const receivedData = {
+      name,
+      price: priceF,
+      discountPrice: discountPriceF,
+      stockQty,
+      sortOrder: sortOrderN,
+      categoryId,
+      productDesc,
+      image,
+      isFeatured: featured_img,
+      status,
+      taxRate,
+      taxType,
+    };
+
+    const result = newPorductSchema.safeParse(receivedData);
+    if (!result.success) {
+      const zodErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        zodErrors[issue.path[0]] = issue.message;
+      });
+      return { errors: zodErrors };
+    }
+
+    // ✅ Upload image
+    let imageUrl = "/com.jpg";
+    if (image && image !== "0") {
+      try {
+        imageUrl = await upload(image);
+      } catch (error) {
+        return { errors: { image: "Image upload failed" } };
+      }
+    }
+
+    // ✅ Fetch category name
+    let productCat = "Uncategorized";
+    try {
+      const categories = await fetchCategories();
+      const matchedCategory = categories.find((cat) => cat.id === categoryId);
+      if (matchedCategory) productCat = matchedCategory.name;
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+
+    // ✅ Prepare Firestore document
+    const data = {
+      name,
+      price: priceF,
+      discountPrice: discountPriceF,
+      stockQty,
+      sortOrder: sortOrderN,
+      categoryId,
+      productCat,
+      productDesc,
+      image: image ? imageUrl : null,
+      isFeatured: featured_img,
+      flavors: false,
+      status,
+      baseProductId: "",
+      purchaseSession: null,
+      quantity: null,
+      taxRate,
+      taxType,
+      createdAt: new Date().toISOString(),
+    };
+
+    // ✅ Save to Firestore
+    const docRef = await adminDb.collection("products").add(data);
+
+    // ✅ ✅ ✅ REVALIDATE ALL PRODUCT PAGES
+    revalidatePath("/");                 // storefront home
+    revalidatePath("/products");         // storefront products page
+    revalidatePath("/admin/products");   // admin product list
+
+    return { success: true, message: "Product saved successfully", id: docRef.id };
+
+  } catch (error) {
+    console.error("❌ Firestore add failed:", error);
+    return { errors: { general: "Could not save product" } };
+  }
+}
+
+
+
+export async function addNewProduct_without_revalidate(formData: FormData) {
   try {
     const featured_img = formData.get("isFeatured") === "true";
     const name = formData.get("name") as string;
@@ -340,6 +448,7 @@ export async function addNewProduct_oldworking(formData: FormData) {
 
 
 import { fetchCategories } from "@/app/(universal)/action/category/dbOperations";
+import { cache } from "react";
 
 export async function editProduct(formData: FormData) {
   const id = formData.get("id") as string;
@@ -397,17 +506,51 @@ export async function editProduct(formData: FormData) {
   const existingProduct = productSnap.data();
 
   // 🔸 Handle image upload
-  let imageUrl = oldImageUrl;
-  if (image && image !== "undefined") {
-    try {
-      imageUrl = await upload(image);
-    } catch (error) {
-      console.error("Image upload failed:", error);
-      return { errors: "Image could not be uploaded" };
+  // let imageUrl = oldImageUrl;
+  // if (image && image !== "undefined") {
+  //   try {
+  //     imageUrl = await upload(image);
+  //   } catch (error) {
+  //     console.error("Image upload failed:", error);
+  //     return { errors: "Image could not be uploaded" };
+  //   }
+  // } else {
+  //   imageUrl = existingProduct?.image || oldImageUrl;
+  // }
+
+
+
+// 🔸 Handle image upload + delete old image
+let imageUrl = oldImageUrl;
+
+if (image && image !== "undefined") {
+  try {
+    // ✅ Upload new image
+    imageUrl = await upload(image);
+
+    // ✅ Delete old Cloudinary image (skip if default image)
+    if (oldImageUrl && !oldImageUrl.includes("/com.jpg")) {
+      const oldParts = oldImageUrl.split("/");
+      const publicId = oldParts.slice(-2).join("/").split(".")[0]; 
+      // ex: anjana-bhog/xyz123
+
+      try {
+        await deleteImage(publicId);
+        console.log("✅ Old Cloudinary image deleted:", publicId);
+      } catch (err) {
+        console.error("❌ Failed to delete old image:", err);
+      }
     }
-  } else {
-    imageUrl = existingProduct?.image || oldImageUrl;
+  } catch (error) {
+    console.error("Image upload failed:", error);
+    return { errors: "Image could not be uploaded" };
   }
+} else {
+  // ✅ Keep old image if no new image uploaded
+  imageUrl = existingProduct?.image || oldImageUrl;
+}
+
+
 
   // 🔸 Handle category (keep same if not changed)
   if (categoryId === "0" || !categoryId) {
@@ -522,9 +665,56 @@ export async function fetchProductById(id: string): Promise<ProductType | null> 
 
 
 
+// ✅ Cached version — reduces Firestore reads massively
+export const fetchProducts = cache(async (): Promise<ProductType[]> => {
+  try {
+    const snapshot = await adminDb.collection("products").get();
 
+    if (snapshot.empty) return [];
 
-export async function fetchProducts(): Promise<ProductType[]> {
+    return snapshot.docs.map((doc) => {
+      const data = doc.data() as Partial<ProductType> & { updatedAt?: any };
+
+      let updatedAt: string | null = null;
+      if (data.updatedAt) {
+        if (typeof data.updatedAt.toDate === "function") {
+          updatedAt = data.updatedAt.toDate().toISOString();
+        } else if (typeof data.updatedAt === "string") {
+          updatedAt = data.updatedAt;
+        }
+      }
+
+      return {
+        id: doc.id,
+        name: data.name ?? "",
+        price: data.price ?? 0,
+        stockQty: data.stockQty ?? 0,
+        discountPrice: data.discountPrice ?? 0,
+        categoryId: data.categoryId ?? "",
+        productCat: data.productCat ?? "",
+        flavors: data.flavors ?? false,
+        status: data.status ?? "draft",
+        baseProductId: data.baseProductId ?? "",
+        productDesc: data.productDesc ?? "",
+        sortOrder: data.sortOrder ?? 0,
+        image: data.image ?? "",
+        isFeatured: data.isFeatured ?? false,
+        purchaseSession: data.purchaseSession ?? null,
+        quantity: data.quantity ?? null,
+        updatedAt,
+
+        // tax fields
+        taxRate: data.taxRate ?? null,
+        taxType: data.taxType ?? null,
+      };
+    });
+  } catch (error) {
+    console.error("Failed to fetch products:", error);
+    throw new Error("Error retrieving product list");
+  }
+});
+
+export async function fetchProducts_without_cash(): Promise<ProductType[]> {
   try {
     const snapshot = await adminDb.collection("products").get();
 
