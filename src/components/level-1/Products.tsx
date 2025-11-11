@@ -1,45 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { UseSiteContext } from "@/SiteContext/SiteContext";
 import dynamic from "next/dynamic";
 import { ProductType } from "@/lib/types/productType";
 import { addOnType } from "@/lib/types/addOnType";
-
-// ✅ Dynamic card selection
-let Card: React.ComponentType<any>;
-const cardType = process.env.NEXT_PUBLIC_PRODUCT_CARD_TYPE;
-switch (cardType) {
-  case "1":
-    Card = dynamic(() => import("../level-2/ProductCard-h1"));
-    break;
-  case "11":
-    Card = dynamic(() => import("../level-2/ProductCard-h11"));
-    break;
-  case "21":
-    Card = dynamic(() => import("../level-2/ProductCard-h21"));
-    break;
-  case "2":
-    Card = dynamic(() => import("../level-2/ProductCard-v2"));
-    break;
-  case "3":
-    Card = dynamic(() => import("../level-2/ProductCard-v3"));
-    break;
-  case "4":
-    Card = dynamic(() => import("../level-2/ProductCard-v4"));
-    break;
-  case "5":
-    Card = dynamic(() => import("../level-2/ProductCard-v5"));
-    break;
-  case "6":
-    Card = dynamic(() => import("../level-2/ProductCard-h6"));
-    break;
-  case "7":
-    Card = dynamic(() => import("../level-2/ProductCard-v7"));
-    break;
-  default:
-    Card = dynamic(() => import("../level-2/ProductCard-h1"));
-}
 
 export default function Products() {
   const { productCategoryIdG, settings, setAllProduct, productToSearchQuery } =
@@ -50,46 +15,82 @@ export default function Products() {
   const [addOns, setAddOns] = useState<addOnType[]>([]);
   const [categoryId, setCategoryId] = useState("");
 
-  // ✅ Set initial category
+  const cardType = process.env.NEXT_PUBLIC_PRODUCT_CARD_TYPE;
+
+  // ✅ DYNAMIC IMPORT — SAFE, NO RERENDER LOOP
+  const Card = useMemo(() => {
+    switch (cardType) {
+      case "1":
+        return dynamic(() => import("../level-2/ProductCard-h1"));
+      case "11":
+        return dynamic(() => import("../level-2/ProductCard-h11"));
+      case "21":
+        return dynamic(() => import("../level-2/ProductCard-h21"));
+      case "2":
+        return dynamic(() => import("../level-2/ProductCard-v2"));
+      case "3":
+        return dynamic(() => import("../level-2/ProductCard-v3"));
+      case "4":
+        return dynamic(() => import("../level-2/ProductCard-v4"));
+      case "5":
+        return dynamic(() => import("../level-2/ProductCard-v5"));
+      case "6":
+        return dynamic(() => import("../level-2/ProductCard-h6"));
+      case "7":
+        return dynamic(() => import("../level-2/ProductCard-v7"));
+      default:
+        return dynamic(() => import("../level-2/ProductCard-h1"));
+    }
+  }, [cardType]);
+
+  // ✅ Set initial category (runs only when settings OR global id changes)
   useEffect(() => {
-    const fallbackCategory = settings.display_category as string;
-    setCategoryId(productCategoryIdG || fallbackCategory || "");
+    const fallback = settings.display_category as string;
+    setCategoryId(productCategoryIdG || fallback || "");
   }, [settings, productCategoryIdG]);
 
-  // ✅ Fetch from API only once (ZERO Firestore reads here)
+  // ✅ Fetch ONCE (no remount loop now)
   useEffect(() => {
+    let isMounted = true;
+
     async function load() {
       try {
-        const res = await fetch("/api/initialData");
+        const res = await fetch("/api/products");
         const data = await res.json();
 
-        const published = data.products.filter(
-          (p: ProductType) => p.status === "published"
-        );
+        console.log("Fetched products ✅");
+
+        const published = data.filter((p: ProductType) => p.status === "published");
+
         const sorted = published.sort(
           (a: ProductType, b: ProductType) =>
             (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
         );
 
-        setAddOns(data.addons);
-        setAllProductsLocal(sorted);
-        setAllProduct(sorted); // context update
+        if (!isMounted) return;
 
-        // If category already selected
-        if (categoryId) {
-          setProducts(sorted.filter((p) => p.categoryId === categoryId));
-        } else {
-          setProducts(sorted);
-        }
+        setAllProductsLocal(sorted);
+        setAllProduct(sorted); // ✅ context update (won’t remount now)
+        setAddOns(data);
+
+        setProducts(
+          categoryId
+            ? sorted.filter((p) => p.categoryId === categoryId)
+            : sorted
+        );
       } catch (err) {
-        console.error("Error loading data:", err);
+        console.error("Error loading products:", err);
       }
     }
 
     load();
-  }, []);
 
-  // ✅ Update when category changes (NO FIRESTORE)
+    return () => {
+      isMounted = false;
+    };
+  }, []); // ✅ runs ONCE ONLY
+
+  // ✅ Category filter
   useEffect(() => {
     if (!categoryId) {
       setProducts(allProducts);
@@ -98,9 +99,9 @@ export default function Products() {
     setProducts(allProducts.filter((p) => p.categoryId === categoryId));
   }, [categoryId, allProducts]);
 
-  // ✅ Local search (NO FIRESTORE)
+  // ✅ Search filter
   useEffect(() => {
-    if (productToSearchQuery === "") {
+    if (!productToSearchQuery) {
       setProducts(allProducts);
       return;
     }
@@ -112,14 +113,16 @@ export default function Products() {
     );
   }, [productToSearchQuery]);
 
-  // ✅ UI Layout Logic
+  // ✅ Layout logic (unchanged)
   let containerClass = "";
   switch (cardType) {
     case "1":
-      containerClass = "flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-5";
+      containerClass =
+        "flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-5";
       break;
     case "11":
-      containerClass = "flex flex-col md:flex-row md:flex-wrap gap-0 md:gap-0";
+      containerClass =
+        "flex flex-col md:flex-row md:flex-wrap gap-0 md:gap-0";
       break;
     case "2":
     case "3":
@@ -127,19 +130,24 @@ export default function Products() {
         "flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-5 justify-center";
       break;
     case "4":
-      containerClass = "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3";
+      containerClass =
+        "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3";
       break;
     case "5":
-      containerClass = "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3";
+      containerClass =
+        "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3";
       break;
     case "6":
-      containerClass = "flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-5";
+      containerClass =
+        "flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-5";
       break;
     case "7":
-      containerClass = "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3";
+      containerClass =
+        "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3";
       break;
     default:
-      containerClass = "flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-5";
+      containerClass =
+        "flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-5";
   }
 
   return (

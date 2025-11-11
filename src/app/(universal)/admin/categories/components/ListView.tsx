@@ -10,25 +10,29 @@ import {
 } from "@/components/ui/table";
 
 import TableRows from "./TableRows";
-import { fetchCategories } from "@/app/(universal)/action/category/dbOperations";
-import { fetchCategoriesClient } from "@/lib/firestore/categoryClient";
 import { categoryType } from "@/lib/types/categoryType";
 
 const ListView = () => {
   const [categoryData, setCategoryData] = useState<categoryType[]>([]);
 
-  useEffect(() => {
-    async function fetchCategoriesList() {
-      try {
-        const categories = await fetchCategories();
-        categories.sort((a, b) => a.sortOrder! - b.sortOrder!);
-        setCategoryData(categories);
-      } catch (error) {
-        console.error("Failed to fetch categories:", error);
-      }
+
+
+useEffect(() => {
+  async function loadCategories() {
+    try {
+      const res = await fetch("/api/categories", { cache: "no-store" });
+      const data = await res.json();
+      setCategoryData(data);
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
     }
-    fetchCategoriesList();
-  }, []);
+  }
+
+  loadCategories();
+}, []);
+
+
+
 
   return (
     <div className="mt-6">

@@ -26,35 +26,22 @@ export default function ListView() {
   const [filtered, setFiltered] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch product + category only once
-useEffect(() => {
-  async function loadData() {
-    try {
-      const [productsRes, categoriesRes] = await Promise.all([
-        fetch("/api/products"),
-        fetch("/api/categories"),
-      ]);
+  // ✅ Fetch initial data only once
+  useEffect(() => {
+    async function loadData() {
+      const res = await fetch("/api/products/initialData");
+      const json = await res.json();
 
-      const productsJson = await productsRes.json();
-      const categoriesJson = await categoriesRes.json();
-console.log("productsJson----", productsJson,categoriesJson)
-
-      setProducts(productsJson?? []);
-      setCategories(categoriesJson ?? []);
-    } catch (error) {
-      console.error("Failed to load data:", error);
-      setProducts([]);
-      setCategories([]);
+      if (!json.error) {
+        setCategories(json.categories);
+        setProducts(json.products);
+      }
+      setLoading(false);
     }
+    loadData();
+  }, []);
 
-    setLoading(false);
-  }
-
-  loadData();
-}, []); // ✅ run once
-
-
-  // ✅ Filter when URL state or products change
+  // ✅ Apply filters when URL changes
   useEffect(() => {
     let list = [...products];
 
@@ -71,7 +58,7 @@ console.log("productsJson----", productsJson,categoriesJson)
     setFiltered(list);
   }, [urlCategory, urlSearch, products]);
 
-  // ✅ Update URL without refreshing
+  // ✅ Update URL (client side, no refresh)
   function updateURL(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
 

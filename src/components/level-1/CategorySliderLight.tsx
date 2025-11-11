@@ -38,6 +38,7 @@ export default function CategorySliderLight() {
     productCategoryIdG,
     setProductCategoryIdG,
     setDisablePickupCatDiscountIds,
+    disablePickupCatDiscountIds,
     settings,
   } = UseSiteContext();
 
@@ -53,27 +54,34 @@ useEffect(() => {
 }, [settings, productCategoryIdG]);
 
   // ✅ Fetch categories
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const categories: CategoryType[] = await fetchCategories();
-        categories.sort((a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0));
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const res = await fetch("/api/categories");
+      const categories: CategoryType[] = await res.json();
 
-        const featured = categories.filter(
-          (category) => category.isFeatured !== "no"
-        );
-        setCategoryData(featured);
+      categories.sort((a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0));
 
-        const disablePickupCategoryIds = categories
-          .filter((category) => category.disablePickupDiscount === true)
-          .map((category) => category.id);
-        setDisablePickupCatDiscountIds(disablePickupCategoryIds);
-      } catch (err) {
-        console.error("Error fetching categories:", err);
-      }
-    };
-    fetchData();
-  }, [setDisablePickupCatDiscountIds]);
+      const featured = categories.filter(
+        (category) => category.isFeatured !== "no"
+      );
+      setCategoryData(featured);
+
+      const disablePickupCategoryIds = categories
+        .filter((category) => category.disablePickupDiscount === true)
+        .map((category) => category.id);
+
+      setDisablePickupCatDiscountIds(disablePickupCategoryIds);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    }
+  };
+
+
+
+  fetchData();
+}, []);
+
 
   // ✅ Scroll handler
   const scroll = (direction: "left" | "right") => {

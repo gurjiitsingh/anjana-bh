@@ -1,26 +1,24 @@
-'use server'
-import { revalidatePath } from 'next/cache';
-import { NextResponse, NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import { fetchCategories } from "@/app/(universal)/action/category/dbOperations";
 
-export async function GET(){
-   
-        // const result = await db.select().from(category)
-        // console.log(result)
-        // return NextResponse.json({
-        //     status: "success",
-        //     data: { category: result },
-        // });
-        return NextResponse.json({"ok":"kk"});
+//export const revalidate = 30; // ✅ Optional background revalidation
+
+export async function GET() {
+  try {
+    const categories = await fetchCategories();
+
+    categories.sort((a, b) => a.sortOrder! - b.sortOrder!);
+
+    return NextResponse.json(categories, {
+      status: 200,
+      // ✅ Tell Next.js this API belongs to the "categories" cache tag
+      headers: { "x-next-cache-tags": "categories" },
+    });
+  } catch (error) {
+    console.error("API /categories error:", error);
+    return NextResponse.json(
+      { error: "Failed to load categories" },
+      { status: 500 }
+    );
+  }
 }
-
-
-export async function DELETE(req: NextRequest) {
-    const { id } = await req.json();
-   // const { id } = req.body;  
-      console.log("Delete api ----", id)
-//const result = await db.delete(category).where(eq(category.id, id))
-revalidatePath('/admin/categories')
-
-return Response.json({status:"ok"})
-}
-

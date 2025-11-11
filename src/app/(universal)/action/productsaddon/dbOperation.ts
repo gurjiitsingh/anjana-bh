@@ -6,9 +6,10 @@ import {
   addOnPorductSchema,
   AddOnProductSchemaType,
   addOnPorductEditSchema,
-  AddOnProductEditSchemaType
+  
 } from "@/lib/types/productAddOnType";
 import { addOnType } from "@/lib/types/addOnType";
+import { revalidateTag } from "next/cache";
 
 export async function addNewProduct(formData: FormData) {
   const featured_img: boolean = false;
@@ -57,6 +58,7 @@ export async function addNewProduct(formData: FormData) {
 
   try {
     const docRef = await adminDb.collection("productaddon").add(data);
+    revalidateTag("addons");
     console.log("Document written with ID: ", docRef.id);
   } catch (e) {
     console.error("Error adding document: ", e);
@@ -90,6 +92,7 @@ export async function deleteProduct(
   oldImgageUrl: string
 ): Promise<rt> {
   console.log("out put ", id, oldImgageUrl);
+  revalidateTag("addons");
   return { errors: "Delete not implemented yet" };
 }
 
@@ -138,6 +141,7 @@ export async function editAddOnProduct(formData: FormData) {
   try {
     const docRef = adminDb.collection("productaddon").doc(id);
     await docRef.set(productUpdtedData);
+      revalidateTag("addons");
   } catch (error) {
     console.log("error", error);
     return { errors: "Cannot update" };
