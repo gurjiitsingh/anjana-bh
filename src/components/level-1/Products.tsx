@@ -6,6 +6,15 @@ import dynamic from "next/dynamic";
 import { ProductType } from "@/lib/types/productType";
 import { addOnType } from "@/lib/types/addOnType";
 
+// export type ProductType = {
+//   id: string;
+//   name: string;
+//   price: number;
+//   image?: string;
+//   categoryId: string;
+//   sortOrder?: number;
+//   [key: string]: any;
+// };
 export default function Products() {
   const { productCategoryIdG, settings, setAllProduct, productToSearchQuery } =
     UseSiteContext();
@@ -56,8 +65,8 @@ export default function Products() {
     async function load() {
       try {
         const res = await fetch("/api/products");
-        const data = await res.json();
-
+      //  const data = await res.json();
+const data: ProductType[] = await res.json(); // ✅ define type here
         console.log("Fetched products ✅");
 
         const published = data.filter((p: ProductType) => p.status === "published");
@@ -71,7 +80,7 @@ export default function Products() {
 
         setAllProductsLocal(sorted);
         setAllProduct(sorted); // ✅ context update (won’t remount now)
-        setAddOns(data);
+       // setAddOns(data);
 
         setProducts(
           categoryId

@@ -38,7 +38,6 @@ export default function CategorySliderLight() {
     productCategoryIdG,
     setProductCategoryIdG,
     setDisablePickupCatDiscountIds,
-    disablePickupCatDiscountIds,
     settings,
   } = UseSiteContext();
 
