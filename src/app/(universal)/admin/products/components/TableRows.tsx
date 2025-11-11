@@ -22,7 +22,7 @@ function TableRows({ product }: { product: ProductType }) {
   const { TEXT } = useLanguage();
   const [isFeatured, setIsFeatured] = useState(product.isFeatured);
 
-  console.log("product----------------------------",product)
+  
 
   const price = formatCurrencyNumber(
     Number(product.price) ?? 0,

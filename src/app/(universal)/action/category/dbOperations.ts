@@ -32,11 +32,11 @@ export async function fetchCategories(): Promise<categoryType[]> {
 
 
 
-export async function deleteCategory(id: string, oldImgageUrl: string) {
+export async function deleteCategory(id: string, oldImageUrl: string) {
   const docRef = adminDb.collection("category").doc(id);
   await docRef.delete();
 
-  const imageUrlArray = oldImgageUrl.split("/");
+  const imageUrlArray = oldImageUrl.split("/");
   const imageName =
     imageUrlArray[imageUrlArray.length - 2] +
     "/" +
@@ -112,13 +112,13 @@ export async function editCategory(formData: FormData) {
   const image = formData.get("image");
   const name = formData.get("name");
   const desc = formData.get("desc");
-  const oldImgageUrl = formData.get("oldImgageUrl") as string;
+  const oldImageUrl = formData.get("oldImageUrl") as string;
   const isFeatured = formData.get("isFeatured");
   const sortOrder = formData.get("sortOrder");
 
   const receivedData = {
     id,
-    oldImgageUrl,
+    oldImageUrl,
     name,
     desc,
     sortOrder,
@@ -136,16 +136,49 @@ export async function editCategory(formData: FormData) {
   }
 
   let imageUrl;
-  if (image === "undefined" || image === null) {
-    imageUrl = oldImgageUrl;
-  } else {
+  // if (image === "undefined" || image === null) {
+  //   imageUrl = oldImageUrl;
+  // } else {
+  //   try {
+  //     imageUrl = (await upload(image)) as string;
+  //   } catch (error) {
+  //     console.log(error);
+  //     return { errors: "Image cannot be uploaded" };
+  //   }
+  // }
+
+
+ if (image && image !== "undefined") {
     try {
-      imageUrl = (await upload(image)) as string;
+      // ✅ Upload new image
+      imageUrl = await upload(image);
+
+      // ✅ Delete old Cloudinary image (skip if default image)
+      if (oldImageUrl && !oldImageUrl.includes("/com.jpg")) {
+        const oldParts = oldImageUrl.split("/");
+        const publicId = oldParts.slice(-2).join("/").split(".")[0];
+        // ex: anjana-bhog/xyz123
+console.log("delete pic id----------------",publicId)
+        try {
+          await deleteImage(publicId);
+          console.log("✅ Old Cloudinary image deleted:", publicId);
+        } catch (err) {
+          console.error("❌ Failed to delete old image:", err);
+        }
+      }
     } catch (error) {
-      console.log(error);
-      return { errors: "Image cannot be uploaded" };
+      console.error("Image upload failed:", error);
+      return { errors: "Image could not be uploaded" };
     }
+  } else {
+    // ✅ Keep old image if no new image uploaded
+   // imageUrl = existingProduct?.image || oldImageUrl;
+     imageUrl = oldImageUrl;
   }
+
+
+
+
 
   const categoryUpdateData = {
     name,

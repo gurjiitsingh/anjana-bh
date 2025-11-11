@@ -169,6 +169,8 @@ export async function addNewProduct(formData: FormData) {
     const docRef = await adminDb.collection("products").add(data);
 
     revalidateTag("products");
+    revalidateTag("featured-products");
+    
     // ✅ ✅ ✅ REVALIDATE ALL PRODUCT PAGES
     revalidatePath("/"); // storefront home
     revalidatePath("/products"); // storefront products page
@@ -340,7 +342,7 @@ export async function editProduct(formData: FormData) {
   try {
     await productRef.update(productData);
     revalidateTag("products");
-
+ revalidateTag("featured-products");
     return { message: "✅ Product updated successfully" };
   } catch (error) {
     console.error("❌ Failed to update product:", error);
@@ -377,6 +379,7 @@ export async function deleteProduct(id: string, oldImageUrl: string) {
 
     // ✅ NOW revalidate cache
     revalidateTag("products");
+    revalidateTag("featured-products");
 
     return { message: "Product and image deleted successfully." };
   } catch (error) {
@@ -673,6 +676,7 @@ export async function toggleFeatured(productId: string, isFeatured: boolean) {
     const productRef = adminDb.collection("products").doc(productId);
     await productRef.update({ isFeatured });
 
+revalidateTag("featured-products");
     return {
       success: true,
       message: `Product ${
